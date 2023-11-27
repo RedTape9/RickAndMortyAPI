@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,18 +16,28 @@ import java.util.Objects;
 @RequestMapping("/rick-and-morty")
 
 public class RickAndMortyController {
-    @GetMapping("/character")
-    public RickAndMortyCharacter getCharacter() {
-        RickAndMortyCharacter character = Objects.requireNonNull(
-                WebClient.create()
-                        .get()
-                        .uri("https://rickandmortyapi.com/api/character/2")
-                        .retrieve()
-                        .toEntity(RickAndMortyCharacter.class)
-                        .block()
-        ).getBody();
-        return character;
+    @GetMapping("/id")
+    public ResponseEntity<RickAndMortyCharacter> getCharacter(@RequestParam(required = false) Integer id) {
+        // Überprüfen, ob die ID null oder ungültig ist
+        if (id == null || id <= 0) {
+            // Rückgabe einer angemessenen Antwort, z.B. Bad Request
+            return ResponseEntity.badRequest().body(null);
+        }
 
+        try {
+            RickAndMortyCharacter character = WebClient.create()
+                    .get()
+                    .uri("https://rickandmortyapi.com/api/character/" + id)
+                    .retrieve()
+                    .toEntity(RickAndMortyCharacter.class)
+                    .block()
+                    .getBody();
+
+            return ResponseEntity.ok(character);
+        } catch (Exception e) {
+            // Behandlung anderer Fehler, z.B. wenn der Charakter nicht gefunden wird
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     /*@GetMapping("/characters")
@@ -55,5 +67,4 @@ public class RickAndMortyController {
 
         return characters != null ? characters.results() : Collections.emptyList();
     }
-
 }
